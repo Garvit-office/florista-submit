@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Florista</title>
+</head>
+<body>
+
+<h1>🌿 Florista App</h1>
+
+<!-- AUTH -->
+<h2>Register</h2>
+<input id="rname" placeholder="Name">
+<input id="remail" placeholder="Email">
+<input id="rpass" placeholder="Password">
+<button onclick="register()">Register</button>
+
+<h2>Login</h2>
+<input id="lemail" placeholder="Email">
+<input id="lpass" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<hr>
+
+<!-- PLANTS -->
+<h2>Add Plant</h2>
+<input id="pname" placeholder="Name">
+<input id="ptype" placeholder="Type">
+<input id="pprice" placeholder="Price">
+<input id="pseller" placeholder="Seller">
+<button onclick="addPlant()">Add Plant</button>
+
+<h2>All Plants</h2>
+<button onclick="loadPlants()">Load Plants</button>
+<ul id="plants"></ul>
+
+<hr>
+
+<!-- CART -->
+<h2>Cart</h2>
+<input id="cartId" placeholder="Plant ID">
+<input id="cartQty" placeholder="Quantity">
+<button onclick="addToCart()">Add to Cart</button>
+
+<button onclick="viewCart()">View Cart</button>
+<ul id="cart"></ul>
+
+<button onclick="checkout()">Checkout</button>
+
+<h3 id="order"></h3>
+
+<script>
+
+let token = "";
+
+// REGISTER
+function register() {
+    fetch("http://localhost:8080/auth/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            name: rname.value,
+            email: remail.value,
+            password: rpass.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+// LOGIN
+function login() {
+    fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: lemail.value,
+            password: lpass.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        token = data.token;
+        alert("Logged in!");
+    });
+}
+
+// ADD PLANT
+function addPlant() {
+    fetch("http://localhost:8080/plants/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+            name: pname.value,
+            type: ptype.value,
+            price: pprice.value,
+            seller: pseller.value
+        })
+    })
+    .then(res => res.text())
+    .then(data => alert(data));
+}
+
+// LOAD PLANTS
+function loadPlants() {
+    fetch("http://localhost:8080/plants", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        let list = document.getElementById("plants");
+        list.innerHTML = "";
+
+        data.forEach(p => {
+            let li = document.createElement("li");
+            li.innerHTML = `${p.id} - ${p.name} - ₹${p.price}`;
+            list.appendChild(li);
+        });
+    });
+}
+
+// ADD TO CART
+function addToCart() {
+    fetch("http://localhost:8080/cart/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+            plantId: parseInt(cartId.value),
+            quantity: parseInt(cartQty.value)
+        })
+    })
+    .then(res => res.text())
+    .then(data => alert(data));
+}
+
+// VIEW CART
+function viewCart() {
+    fetch("http://localhost:8080/cart", {
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        let list = document.getElementById("cart");
+        list.innerHTML = "";
+
+        data.forEach(item => {
+            let li = document.createElement("li");
+            li.innerHTML = `${item.name} x ${item.quantity}`;
+            list.appendChild(li);
+        });
+    });
+}
+
+// CHECKOUT
+function checkout() {
+    fetch("http://localhost:8080/orders/checkout", {
+        method: "POST",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("order").innerText =
+            "Order placed! Total: ₹" + data.totalAmount;
+    });
+}
+
+</script>
+
+</body>
+</html>
